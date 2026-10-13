@@ -1,9 +1,9 @@
 # CareerBotTz Implementation Plan
 
-**Document:** `docs/IMPLEMENTATION_PLAN.md`  
-**Project:** CareerBotTz  
-**Source baseline:** Version 1.0, 11 October 2026  
-**Status:** Draft for review — not approved  
+**Document:** `docs/IMPLEMENTATION_PLAN.md`
+**Project:** CareerBotTz
+**Source baseline:** Version 1.0, 11 October 2026
+**Status:** Draft for review — not approved
 **Current phase:** P01 — Requirements and Architecture Approval
 
 ## 1. Purpose and source authority
@@ -147,8 +147,7 @@ Acceptance:
 - Documents agree on task status, blockers, decisions, and next action.
 - Drafts are reviewed and saved with evidence before P01-T02 is complete.
 
-**Current status:** In progress. Revised drafts are presented for review;
-they have not been saved in the repository or approved.
+**Current status:** In progress. The documentation drafts have been saved and pushed. Source review and acceptance remain pending; saving/pushing does not constitute approval.
 
 ### P01-T03 — Approve user journeys, supported commands, and language rules
 
@@ -623,12 +622,12 @@ Original task IDs must remain stable.
 
 ## 18. Current execution status and authorization
 
-**Current phase:** P01 — Requirements and Architecture Approval.  
-**Current task:** P01-T02 — Requirements and Traceability Documentation.  
+**Current phase:** P01 — Requirements and Architecture Approval.
+**Current task:** P01-T08 — Finalize dependency-ordered backlog and progress process.
 **P01-T01:** In progress; initial inspection was performed, but
-compatibility assessment and acceptance are incomplete.  
-**P01-T02:** In progress; drafts are under review and not yet saved.  
-**P01 gate:** Not approved.  
+compatibility assessment and acceptance are incomplete.
+**P01-T02:** In progress; documentation files have been saved and pushed; source-to-draft review and acceptance evidence remain pending.
+**P01 gate:** Not approved.
 **P02:** Blocked.
 
 This plan authorizes documentation review only. It does not authorize

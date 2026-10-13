@@ -1,9 +1,9 @@
 # CareerBotTz Project Progress
 
-**Document:** `docs/PROGRESS.md`  
-**Project:** CareerBotTz  
-**Source baseline:** Version 1.0, 11 October 2026  
-**Status:** Draft for review — not approved  
+**Document:** `docs/PROGRESS.md`
+**Project:** CareerBotTz
+**Source baseline:** Version 1.0, 11 October 2026
+**Status:** Draft for review — not approved
 **Current phase:** P01 — Requirements and Architecture Approval
 
 ## 1. Purpose
@@ -136,47 +136,36 @@ that external services cannot be provisioned later.
 
 ## 3. Current phase and task register
 
-Use the Codespaces roadmap's status definitions:
-
-- **Not started:** no work or verification yet.
-- **In progress:** work has begun, but acceptance evidence is incomplete.
-- **Blocked:** a prerequisite, decision, tool, or test prevents progress.
-- **Completed:** deliverables exist, acceptance criteria are met,
-  required tests/manual checks pass, and evidence is recorded.
+Use the Codespaces roadmap status definitions: **Not started** (no work/verification), **In progress** (acceptance evidence incomplete), **Blocked** (a prerequisite or decision prevents progress), and **Completed** (acceptance criteria and required checks pass with evidence).
 
 | Task ID | Task | Status | Evidence and next action |
 |---|---|---|---|
-| P01-T01 | Inspect repository and environment | In progress | Initial repository, Git, OS, runtime, extension, and command-availability findings received. Assess compatibility, verify remaining environment questions, and record the safe project-creation approach before acceptance. |
-| P01-T02 | Prepare requirements and traceability documentation | In progress | Revised drafts prepared for review. They have not been saved in the repository or approved. Complete source comparison, user review, saving, and diff/evidence checks. |
-| P01-T03 | Approve user journeys, supported commands, and language rules | Not started | Review English/Kiswahili behavior, CV journeys, state-dependent commands, cancellation, and recovery. |
-| P01-T04 | Finalize ERD and persistence constraints | Not started | Reconcile the proposed 19-table inventory; define relationships, ownership, constraints, versioning, concurrency, deletion/retention, and migration order. |
-| P01-T05 | Approve state machine, AI output contract, and CV lifecycle | Not started | Define transitions, AI schemas, validation, intent behavior, retry/recovery, and resolve the 14-versus-13 discrepancy. |
-| P01-T06 | Approve Laravel–Node gateway contract | Not started | Decide transport, authentication, acknowledgement, error/status behavior, and QR/session lifecycle. |
-| P01-T07 | Approve security, testing, and operations requirements | Not started | Review permissions, secrets, privacy, retention, monitoring, backup, restoration, rollback, and acceptance evidence. |
-| P01-T08 | Finalize dependency-ordered backlog and progress process | Not started | Reconcile dependencies and blockers; conduct the explicit P01 gate review. |
+| P01-T01 | Inspect repository and environment | In progress | Initial inspection was recorded. Compatibility assessment, remaining environment verification, and acceptance are pending. |
+| P01-T02 | Requirements and traceability documentation | In progress | Documentation files have been saved/pushed. Source-to-draft review, consistency review, and acceptance evidence remain pending. |
+| P01-T03 | User journeys, commands, and language rules | In progress — review pending | `AI_CONVERSATION.md` exists as a draft. Review bilingual behavior, CV journeys, commands, cancellation, and recovery. |
+| P01-T04 | ERD and persistence constraints | In progress — review pending | `DATABASE_ERD.md` exists as a draft. Reconcile the proposed 19-table inventory and review ownership, constraints, versioning, deletion/retention, and migration order. |
+| P01-T05 | State machine, AI contract, and CV lifecycle | In progress — review pending | `AI_CONVERSATION.md` exists as a draft. Review transitions, schemas, retry/recovery, and the 14-versus-13 intent discrepancy. |
+| P01-T06 | Laravel–Node gateway contract | In progress — review pending | `GATEWAY_CONTRACT.md` was saved/pushed in commit `781823e`. Review transport, authentication, acknowledgements, error/status behavior, and QR/session lifecycle. |
+| P01-T07 | Security, testing, and operations requirements | In progress — review pending | `SECURITY.md` was saved/pushed in commit `896456d`. Review permissions, secrets, privacy, retention, monitoring, backup, restoration, and rollback. |
+| P01-T08 | Dependency-ordered backlog and progress process | In progress | Reconcile dependencies and acceptance criteria, preserve task IDs, assign owners to open decisions, correct status/evidence, and conduct the P01 gate review. |
 
-P01-T01 remains in progress because inspection was performed but
-compatibility assessment and acceptance are incomplete.
-
-P01-T02 remains in progress because generated drafts are not the same
-as reviewed, saved, verified, and accepted documentation.
+A saved/pushed draft is not automatically approved. Do not mark T01–T07 complete without task-specific acceptance evidence and required review. P01-T08 is the current task.
 
 ## 4. Required documentation inventory
 
-The project requires these seven design documents:
+The seven source-required documents are present in the recorded Git history. Their presence does not imply approval.
 
-| File | Current recorded status |
+| File | Recorded status |
 |---|---|
-| `docs/REQUIREMENTS.md` | Draft prepared for review; not saved or approved. |
-| `docs/ARCHITECTURE.md` | Not yet recorded as created or approved in the repository. |
-| `docs/DATABASE_ERD.md` | Not yet recorded as created or approved in the repository. |
-| `docs/AI_CONVERSATION.md` | Not yet recorded as created or approved in the repository. |
-| `docs/SECURITY.md` | Not yet recorded as created or approved in the repository. |
-| `docs/IMPLEMENTATION_PLAN.md` | Draft prepared for review; not saved or approved. |
-| `docs/PROGRESS.md` | Draft prepared for review; not saved or approved. |
+| `docs/REQUIREMENTS.md` | Saved/pushed; source-to-requirement review and acceptance pending. |
+| `docs/ARCHITECTURE.md` | Saved/pushed as a draft; architecture/integration review pending. |
+| `docs/DATABASE_ERD.md` | Saved/pushed as a draft; ERD/persistence review pending. |
+| `docs/AI_CONVERSATION.md` | Saved/pushed as a draft; journey/state/AI review pending. |
+| `docs/SECURITY.md` | Saved/pushed as a draft in commit `896456d`; approval pending. |
+| `docs/IMPLEMENTATION_PLAN.md` | Saved/pushed; task/dependency/status review is being updated under P01-T08. |
+| `docs/PROGRESS.md` | Saved/pushed; this update corrects stale status and evidence records. |
 
-No claim is made here that these documents already exist in the
-repository. Recheck the current `docs/` directory before saving.
+The last recorded Git state was clean on `main`, tracking `origin/main`, at `896456d`. Recheck current Git state before relying on this historical observation.
 
 ## 5. Source discrepancies requiring review
 
@@ -242,18 +231,18 @@ A proposed architecture is not proof of a working implementation.
 
 | Evidence ID | Evidence | Recorded status |
 |---|---|---|
-| EVD-001 | Repository root, listing, Git branch/status output | Received from user-supplied inspection. |
-| EVD-002 | OS, Git, PHP, Composer, Node.js, npm, MySQL CLI, and Redis CLI results | Received from user-supplied inspection. |
-| EVD-003 | PHP module list and Laravel file-indicator checks | Received from user-supplied inspection. |
+| EVD-001 | Repository root, listing, branch/status output | Received from initial terminal inspection; recheck before changes. |
+| EVD-002 | OS and Git/PHP/Composer/Node/npm/MySQL/Redis command results | Historical inspection output received. |
+| EVD-003 | PHP modules and Laravel file-indicator checks | Historical inspection output received; compatibility acceptance pending. |
 | EVD-004 | Composer diagnostic summary | Summary received; full diagnostic output not recorded. |
-| EVD-005 | Laravel application smoke test | Not run; Laravel was not initialized in the recorded inspection. |
-| EVD-006 | Database connection/migration test | Not run; service/application readiness is unverified. |
-| EVD-007 | Redis queue/Horizon test | Not run; service/application readiness is unverified. |
+| EVD-005 | Laravel smoke test | Not run; Laravel was not initialized during the recorded inspection. |
+| EVD-006 | Database connection/migration test | Not run; service/application readiness unverified. |
+| EVD-007 | Redis queue/Horizon test | Not run; service/application readiness unverified. |
 | EVD-008 | Gateway, Gemini, PDF, security, and acceptance tests | Not run; implementation has not started. |
-| EVD-009 | Revised documentation saved and diff-reviewed | Pending user review and Codespaces save procedure. |
+| EVD-009 | Documentation files saved/pushed | Git history records `9162cf1`, `81601c5`, `62101d0`, `7a4443f`, `781823e`, and `896456d`. These prove file changes, not design approval. |
+| EVD-010 | Documentation consistency and P01-T08 review | In progress; final diff/review and gate decision remain pending. |
 
-No test is marked passed unless its actual output or documented manual
-evidence has been reviewed.
+Do not mark a test passed without its actual output or documented manual evidence.
 
 ## 8. Phase-gate status
 
@@ -272,39 +261,38 @@ evidence has been reviewed.
 
 | Entry | Date | Change |
 |---|---|---|
-| CHG-001 | 11 October 2026 | Initial repository/environment inspection findings recorded from supplied terminal output. |
-| CHG-002 | 11 October 2026 | Initial requirements, implementation-plan, and progress drafts prepared for review. |
-| CHG-003 | 11 October 2026 | Revised documentation drafts prepared with source discrepancies, task status, evidence, and blocker distinctions retained. |
+| CHG-001 | 11 October 2026 | Initial repository/environment findings recorded from supplied terminal output. |
+| CHG-002 | 11 October 2026 | Initial requirements, implementation-plan, and progress drafts prepared. |
+| CHG-003 | 11 October 2026 | Revised drafts prepared with source discrepancies, status, evidence, and blockers. |
+| CHG-004 | 12 October 2026 | Architecture, ERD, AI conversation, gateway contract, and security drafts saved/pushed; gateway commit `781823e`, security commit `896456d`. |
+| CHG-005 | 13 October 2026 | P01-T08 review update corrects stale document inventory/status and records the current task; P01 remains unapproved. |
 
-These entries describe documentation activity in the conversation.
-They do not claim that repository files have been changed or committed.
+These entries record documentation activity and do not imply that design decisions or P01 have been approved.
 
 ## 10. Next action
 
-1. Review the complete revised drafts.
-2. Confirm requested corrections or approve the drafts for saving.
-3. Recheck the current repository and `docs/` directory in Codespaces.
-4. Save the three documents without replacing the README or unrelated
-   work.
-5. Run whitespace, status, and diff checks.
-6. Review the complete diff before staging.
-7. Stage only the three intended files after review.
-8. Inspect the staged diff; do not commit or push until explicitly
-   authorized.
-9. Complete P01-T02 acceptance only after source comparison, user
-   review, saving, and evidence recording.
-10. Continue P01-T03 and the remaining P01 design tasks in dependency
-    order.
-11. Obtain explicit P01 gate approval before P02.
+1. Recheck repository root, branch, working tree, and latest commits in Codespaces.
+2. Review the diff for `docs/IMPLEMENTATION_PLAN.md` and `docs/PROGRESS.md`, preserving README, Git history, and unrelated work.
+3. Reconcile dependencies and acceptance criteria across P01–P08 while preserving original task IDs.
+4. Complete T01 compatibility assessment and record the safe Laravel creation strategy.
+5. Review T03–T07 decisions. For each unresolved decision, record the responsible decision owner, affected task/phase, and whether it blocks implementation.
+6. Preserve the 14-versus-13 intent discrepancy and 16 prose scenarios versus ACC-01–ACC-15 discrepancy until explicitly reviewed. Do not invent or silently delete source IDs/scenarios.
+7. Record the P01 gate outcome only after review. If a launch-critical decision remains unresolved, keep P01 not approved and record the blocker.
+8. Commit/push this update only after user review and explicit authorization.
+9. Do not initialize Laravel, install packages, create migrations, or begin P02 before explicit P01 approval.
 
 ## 11. Approval record
 
 | Item | Status |
 |---|---|
-| Inspection findings | Based on supplied terminal output; current environment should be rechecked. |
-| P01-T01 acceptance | Pending compatibility assessment and acceptance review. |
-| P01-T02 source-to-draft review | Pending. |
-| P01-T02 files saved and verified | Pending. |
-| P01-T02 accepted | Not yet accepted. |
+| Initial inspection findings | Recorded from supplied terminal output; recheck current environment. |
+| P01-T01 acceptance | Pending compatibility assessment and review. |
+| P01-T02 source-to-draft review | Pending; files saved/pushed, but saving is not acceptance. |
+| P01-T03 user journeys and language rules | Draft available; review/approval pending. |
+| P01-T04 ERD and persistence | Draft available; review/approval pending. |
+| P01-T05 state machine, AI contract, and CV lifecycle | Draft available; review/approval pending. |
+| P01-T06 gateway contract | Draft saved/pushed; review/approval pending. |
+| P01-T07 security, testing, and operations | Draft saved/pushed; review/approval pending. |
+| P01-T08 dependency-ordered backlog and review checklist | In progress. |
 | P01 gate approval | Not granted. |
-| P02 authorization | Not granted. |
+| P02 authorization | Not granted; P02 remains blocked. |
