@@ -1,0 +1,66 @@
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      MYSQL_DATABASE: careerbottz
+      MYSQL_USER: careerbottz
+      MYSQL_PASSWORD: "${DB_PASSWORD:?Set DB_PASSWORD in .env}"
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}"
+    volumes:
+      - careerbottz_mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - 'mysqladmin ping -h 127.0.0.1 -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent'
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  redis:
+    image: redis:7.4-alpine
+    restart: unless-stopped
+    network_mode: host
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - careerbottz_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-h", "127.0.0.1", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    network_mode: host
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      PMA_HOST: 127.0.0.1
+      PMA_PORT: 3306
+      APACHE_PORT: 8081
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  careerbottz_mysql_data:
+    name: careerbottz_careerbottz_mysql_data
+  careerbottz_redis_data:
+    name: careerbottz_careerbottz_redis_data
