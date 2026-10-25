@@ -1,0 +1,100 @@
+import { sendInboundMessage } from './laravel-client.js';
+import { resolvePhoneNumberForJid } from './jid-mapping.js';
+
+function extractText(message) {
+    return (
+        message?.conversation ??
+        message?.extendedTextMessage?.text ??
+        message?.imageMessage?.caption ??
+        message?.videoMessage?.caption ??
+        null
+    );
+}
+
+export async function handleWhatsAppMessage(
+    message,
+    logger = console,
+    send = sendInboundMessage,
+) {
+    const ignore = (reason) => {
+        logger.info?.(
+            { reason },
+            'WhatsApp message ignored.',
+        );
+
+        return { ignored: true, reason };
+    };
+
+    if (!message?.key) {
+        return ignore('missing-message-key');
+    }
+
+    if (message.key.fromMe) {
+        return ignore('message-from-linked-account');
+    }
+
+    const remoteJid = message.key.remoteJid;
+
+    if (typeof remoteJid !== 'string') {
+        return ignore('missing-chat-id');
+    }
+
+    if (remoteJid.endsWith('@g.us')) {
+        return ignore('group-chat-disabled');
+    }
+
+    const senderPhone = resolvePhoneNumberForJid(remoteJid);
+
+    if (!senderPhone) {
+        return ignore(
+            remoteJid.endsWith('@lid')
+                ? 'unmapped-lid'
+                : 'unsupported-chat-type',
+        );
+    }
+
+    const text = extractText(message.message);
+
+    if (typeof text !== 'string' || !text.trim()) {
+        return ignore('no-supported-text');
+    }
+
+    const providerMessageId = message.key.id;
+
+    if (
+        typeof providerMessageId !== 'string' ||
+        !providerMessageId.trim()
+    ) {
+        return ignore('missing-provider-message-id');
+    }
+
+    try {
+        const result = await send({
+            provider_message_id: providerMessageId,
+            sender_phone_e164: `+${senderPhone}`,
+            text: text.trim(),
+        });
+
+        logger.info?.(
+            {
+                outcome: result?.duplicate
+                    ? 'duplicate'
+                    : 'forwarded',
+                messageIdPresent: true,
+            },
+            'Inbound WhatsApp message handled.',
+        );
+
+        return { ignored: false, result };
+    } catch (error) {
+        logger.error?.(
+            {
+                errorName: error?.name ?? 'Error',
+                messageIdPresent: true,
+            },
+            'Failed to forward inbound WhatsApp message to Laravel.',
+        );
+
+        throw error;
+    }
+}

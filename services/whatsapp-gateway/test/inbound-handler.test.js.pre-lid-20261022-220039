@@ -1,0 +1,108 @@
+
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { handleWhatsAppMessage } from '../src/inbound-handler.js';
+
+function makeMessage(overrides = {}) {
+    return {
+        key: {
+            id: 'wamid.test-001',
+            remoteJid: '255712345678@s.whatsapp.net',
+            fromMe: false,
+        },
+        message: {
+            conversation: 'Hello CareerBotTz',
+        },
+        ...overrides,
+    };
+}
+
+test('forwards a valid inbound text message', async () => {
+    let receivedPayload;
+
+    const result = await handleWhatsAppMessage(
+        makeMessage(),
+        { info() {}, error() {} },
+        async (payload) => {
+            receivedPayload = payload;
+            return { data: { duplicate: false } };
+        },
+    );
+
+    assert.equal(result.ignored, false);
+    assert.deepEqual(receivedPayload, {
+        provider_message_id: 'wamid.test-001',
+        sender_phone_e164: '+255712345678',
+        text: 'Hello CareerBotTz',
+    });
+});
+
+test('ignores messages sent by the bot itself', async () => {
+    const message = makeMessage({
+        key: {
+            id: 'wamid.test-002',
+            remoteJid: '255712345678@s.whatsapp.net',
+            fromMe: true,
+        },
+    });
+
+    const result = await handleWhatsAppMessage(
+        message,
+        { info() {}, error() {} },
+        async () => {
+            assert.fail('Sender must not be called');
+        },
+    );
+
+    assert.equal(result.ignored, true);
+});
+
+test('ignores group messages', async () => {
+    const message = makeMessage({
+        key: {
+            id: 'wamid.test-003',
+            remoteJid: '123456789@g.us',
+            fromMe: false,
+        },
+    });
+
+    const result = await handleWhatsAppMessage(
+        message,
+        { info() {}, error() {} },
+        async () => {
+            assert.fail('Sender must not be called');
+        },
+    );
+
+    assert.equal(result.ignored, true);
+});
+
+test('ignores messages without supported text', async () => {
+    const message = makeMessage({
+        message: { audioMessage: {} },
+    });
+
+    const result = await handleWhatsAppMessage(
+        message,
+        { info() {}, error() {} },
+        async () => {
+            assert.fail('Sender must not be called');
+        },
+    );
+
+    assert.equal(result.ignored, true);
+});
+
+test('propagates Laravel forwarding errors', async () => {
+    await assert.rejects(
+        handleWhatsAppMessage(
+            makeMessage(),
+            { info() {}, error() {} },
+            async () => {
+                throw new Error('Laravel unavailable');
+            },
+        ),
+        /Laravel unavailable/,
+    );
+});

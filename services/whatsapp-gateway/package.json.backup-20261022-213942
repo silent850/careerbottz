@@ -1,0 +1,23 @@
+{
+  "name": "careerbot-tz-whatsapp-gateway",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/index.js",
+    "check": "node --check src/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "private": "true",
+  "dependencies": {
+    "@whiskeysockets/baileys": "6.7.24",
+    "fastify": "5.12.7",
+    "pino": "10.4.0",
+    "qrcode-terminal": "^0.12.0",
+    "zod": "4.6.7"
+  }
+}
