@@ -25,3 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# WhatsApp gateway generated authentication/session data
+/services/whatsapp-gateway/storage/whatsapp-session/
+/services/whatsapp-gateway/storage/whatsapp-session.*/
