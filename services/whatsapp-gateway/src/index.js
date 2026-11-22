@@ -1,4 +1,3 @@
-
 import { timingSafeEqual } from 'node:crypto';
 import { rename } from 'node:fs/promises';
 import Fastify from 'fastify';
@@ -6,6 +5,7 @@ import pino from 'pino';
 import makeWASocket, {
     DisconnectReason,
     useMultiFileAuthState,
+    downloadMediaMessage,
 } from '@whiskeysockets/baileys';
 import qrcode from 'qrcode-terminal';
 
@@ -52,6 +52,66 @@ function authenticateInternalRequest(request, reply, done) {
 
     done();
 }
+
+app.post(
+  '/internal/send-message',
+  { preHandler: authenticateInternalRequest },
+  async (request, reply) => {
+    const body = request.body ?? {};
+    const phone = body.phone_e164;
+    const text = typeof body.text === 'string' ? body.text.trim() : '';
+
+    if (
+      typeof phone !== 'string' ||
+      !/^\+[1-9]\d{7,14}$/.test(phone) ||
+      text.length === 0 ||
+      text.length > 4000
+    ) {
+      return reply.code(422).send({
+        success: false,
+        message: 'Invalid recipient phone number or message text.',
+      });
+    }
+
+    const currentSocket = socket;
+
+    if (!currentSocket?.user) {
+      return reply.code(503).send({
+        success: false,
+        message: 'WhatsApp is not connected.',
+      });
+    }
+
+    try {
+      const jid = `${phone.slice(1)}@s.whatsapp.net`;
+      const result = await currentSocket.sendMessage(jid, { text });
+
+      if (!result?.key?.id) {
+        request.log.error('WhatsApp send returned no message ID.');
+
+        return reply.code(502).send({
+          success: false,
+          message: 'WhatsApp did not confirm the message ID.',
+        });
+      }
+
+      return reply.code(200).send({
+        success: true,
+        provider_message_id: result.key.id,
+      });
+    } catch (error) {
+      request.log.error(
+        { err: error },
+        'Failed to send an outbound WhatsApp message.'
+      );
+
+      return reply.code(502).send({
+        success: false,
+        message: 'WhatsApp message delivery could not be confirmed.',
+      });
+    }
+  }
+);
 
 app.get('/health', async () => ({
     status: 'ok',
@@ -276,6 +336,16 @@ async function startWhatsApp() {
 
                         return await mappingStore.getPNForLID(lid);
                     },
+                    async (incomingMessage) => downloadMediaMessage(
+                        incomingMessage,
+                        'stream',
+                        {},
+                        {
+                            reuploadRequest: (mediaMessage) =>
+                                currentSocket.updateMediaMessage(mediaMessage),
+                            logger: app.log,
+                        },
+                    ),
                 );
 
                 app.log.info(

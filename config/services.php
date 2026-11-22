@@ -16,6 +16,19 @@ return [
         'key' => env('RESEND_API_KEY'),
     ],
 
+    
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'base_url' => env(
+            'GEMINI_BASE_URL',
+            'https://generativelanguage.googleapis.com/v1beta'
+        ),
+        'model' => env('GEMINI_MODEL', 'gemini-3.5-flash-lite'),
+        'timeout' => (int) env('GEMINI_TIMEOUT', 20),
+        'connect_timeout' => (int) env('GEMINI_CONNECT_TIMEOUT', 5),
+    ],
+
+
     'whatsapp_gateway' => [
         'secret' => env('WHATSAPP_GATEWAY_SECRET'),
         'base_url' => env(

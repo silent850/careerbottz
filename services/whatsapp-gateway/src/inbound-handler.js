@@ -2,12 +2,18 @@
 import { sendInboundMessage } from './laravel-client.js';
 import { resolvePhoneNumberForJid } from './jid-mapping.js';
 
-function extractText(message) {
-    const content = message?.ephemeralMessage?.message
+const MAX_ATTACHMENT_BYTES = 10 * 1024 * 1024;
+
+function unwrapContent(message) {
+    return message?.ephemeralMessage?.message
         ?? message?.viewOnceMessage?.message
         ?? message?.viewOnceMessageV2?.message
         ?? message?.documentWithCaptionMessage?.message
         ?? message;
+}
+
+function extractText(message) {
+    const content = unwrapContent(message);
 
     return (
         content?.conversation ??
@@ -23,10 +29,82 @@ function extractText(message) {
     );
 }
 
+function extractAttachment(message) {
+    const content = unwrapContent(message);
+
+    if (content?.imageMessage) {
+        return {
+            media: content.imageMessage,
+            mimetype: content.imageMessage.mimetype,
+            fileName: 'whatsapp-image',
+        };
+    }
+
+    if (content?.documentMessage) {
+        return {
+            media: content.documentMessage,
+            mimetype: content.documentMessage.mimetype,
+            fileName: content.documentMessage.fileName,
+        };
+    }
+
+    return null;
+}
+
 function normalizePhoneJid(jid) {
     const phone = resolvePhoneNumberForJid(jid);
 
     return phone ? `+${phone}` : null;
+}
+
+function isSupportedAttachment(mimetype) {
+    return [
+        'application/pdf',
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+    ].includes(String(mimetype ?? '').toLowerCase());
+}
+
+function safeFileName(fileName, mimetype) {
+    const fallback = mimetype === 'application/pdf'
+        ? 'job-advertisement.pdf'
+        : 'whatsapp-image';
+
+    const name = typeof fileName === 'string' && fileName.trim()
+        ? fileName.trim()
+        : fallback;
+
+    return name
+        .split(/[\\/]/)
+        .pop()
+        .replace(/[^a-zA-Z0-9._-]/g, '_')
+        .slice(0, 180) || fallback;
+}
+
+async function readMediaStream(stream) {
+    const chunks = [];
+    let totalBytes = 0;
+
+    for await (const chunk of stream) {
+        const buffer = Buffer.isBuffer(chunk)
+            ? chunk
+            : Buffer.from(chunk);
+
+        totalBytes += buffer.length;
+
+        if (totalBytes > MAX_ATTACHMENT_BYTES) {
+            throw new Error('attachment-too-large');
+        }
+
+        chunks.push(buffer);
+    }
+
+    if (totalBytes === 0) {
+        throw new Error('empty-attachment');
+    }
+
+    return Buffer.concat(chunks, totalBytes);
 }
 
 export async function handleWhatsAppMessage(
@@ -34,6 +112,7 @@ export async function handleWhatsAppMessage(
     logger = console,
     send = sendInboundMessage,
     resolveLidPhoneNumber = async () => null,
+    downloadMedia = null,
 ) {
     const ignore = (reason, details = {}) => {
         logger.info?.(
@@ -48,8 +127,6 @@ export async function handleWhatsAppMessage(
         return ignore('missing-message-key');
     }
 
-    // This gateway handles incoming messages from other people.
-    // Do not process messages sent by the linked WhatsApp account.
     if (message.key.fromMe === true) {
         return ignore('message-from-linked-account');
     }
@@ -61,13 +138,10 @@ export async function handleWhatsAppMessage(
         return ignore('missing-chat-id');
     }
 
-    // Group messages are intentionally disabled.
     if (remoteJid.endsWith('@g.us')) {
         return ignore('group-chat-disabled');
     }
 
-    // Ignore broadcast/status destinations rather than treating them
-    // as individual contacts.
     if (
         remoteJid === 'status@broadcast' ||
         remoteJid.endsWith('@broadcast')
@@ -79,12 +153,9 @@ export async function handleWhatsAppMessage(
         normalizePhoneJid(remoteJid) ??
         normalizePhoneJid(alternateJid);
 
-    // LID addresses do not contain a reliably recoverable phone number.
-    // Resolve them through the mapping supplied by the Baileys socket.
     if (!senderPhone && remoteJid.endsWith('@lid')) {
         try {
             const phoneJid = await resolveLidPhoneNumber(remoteJid);
-
             senderPhone = normalizePhoneJid(phoneJid);
         } catch (error) {
             logger.warn?.(
@@ -97,14 +168,10 @@ export async function handleWhatsAppMessage(
         }
     }
 
-    // Some events provide the alternate JID as a LID. Resolve that too.
     if (!senderPhone && typeof alternateJid === 'string') {
-        const alternateIsLid = alternateJid.endsWith('@lid');
-
-        if (alternateIsLid) {
+        if (alternateJid.endsWith('@lid')) {
             try {
                 const phoneJid = await resolveLidPhoneNumber(alternateJid);
-
                 senderPhone = normalizePhoneJid(phoneJid);
             } catch (error) {
                 logger.warn?.(
@@ -134,8 +201,10 @@ export async function handleWhatsAppMessage(
     }
 
     const text = extractText(message.message);
+    const attachmentMessage = extractAttachment(message.message);
+    const normalizedText = typeof text === 'string' ? text.trim() : '';
 
-    if (typeof text !== 'string' || !text.trim()) {
+    if (!normalizedText && !attachmentMessage) {
         return ignore('no-supported-text', {
             hasMessageContent: Boolean(message.message),
             messageTypes: Object.keys(message.message ?? {}),
@@ -151,17 +220,75 @@ export async function handleWhatsAppMessage(
         return ignore('missing-provider-message-id');
     }
 
+    let attachment = null;
+
+    if (attachmentMessage) {
+        const mimetype = String(
+            attachmentMessage.mimetype ?? '',
+        ).toLowerCase();
+
+        if (!isSupportedAttachment(mimetype)) {
+            return ignore('unsupported-attachment-type', {
+                attachmentType: mimetype || 'unknown',
+            });
+        }
+
+        if (typeof downloadMedia !== 'function') {
+            throw new Error(
+                'WhatsApp media downloader is not configured.',
+            );
+        }
+
+        try {
+            const stream = await downloadMedia(message);
+            const buffer = await readMediaStream(stream);
+
+            attachment = {
+                buffer,
+                mimetype,
+                fileName: safeFileName(
+                    attachmentMessage.fileName,
+                    mimetype,
+                ),
+            };
+        } catch (error) {
+            if (error?.message === 'attachment-too-large') {
+                return ignore('attachment-too-large', {
+                    maximumBytes: MAX_ATTACHMENT_BYTES,
+                });
+            }
+
+            if (error?.message === 'empty-attachment') {
+                return ignore('empty-attachment');
+            }
+
+            logger.error?.(
+                {
+                    errorName: error?.name ?? 'Error',
+                    messageIdPresent: true,
+                },
+                'Failed to download inbound WhatsApp media.',
+            );
+
+            throw error;
+        }
+    }
+
     try {
-        const result = await send({
-            provider_message_id: providerMessageId,
-            sender_phone_e164: senderPhone,
-            text: text.trim(),
-        });
+        const result = await send(
+            {
+                provider_message_id: providerMessageId,
+                sender_phone_e164: senderPhone,
+                text: normalizedText,
+            },
+            attachment,
+        );
 
         logger.info?.(
             {
                 outcome: result?.duplicate ? 'duplicate' : 'forwarded',
                 messageIdPresent: true,
+                hasAttachment: Boolean(attachment),
             },
             'Inbound WhatsApp message handled.',
         );

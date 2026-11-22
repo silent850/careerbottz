@@ -233,3 +233,139 @@ test('ignores an invalid phone-number mapping result', async () => {
         reason: 'unmapped-lid',
     });
 });
+
+async function* makeMediaStream(buffer) {
+    yield buffer;
+}
+
+test('forwards a PDF attachment without a text caption', async () => {
+    let receivedPayload;
+    let receivedAttachment;
+
+    const pdfBuffer = Buffer.from('%PDF-1.7 test content');
+
+    const result = await handleWhatsAppMessage(
+        makeMessage({
+            key: {
+                id: 'wamid.test-pdf-001',
+                remoteJid: '255712345678@s.whatsapp.net',
+                fromMe: false,
+            },
+            message: {
+                documentMessage: {
+                    mimetype: 'application/pdf',
+                    fileName: 'job-advertisement.pdf',
+                },
+            },
+        }),
+        { info() {}, warn() {}, error() {} },
+        async (payload, attachment) => {
+            receivedPayload = payload;
+            receivedAttachment = attachment;
+            return { duplicate: false };
+        },
+        async () => null,
+        async () => makeMediaStream(pdfBuffer),
+    );
+
+    assert.equal(result.ignored, false);
+    assert.equal(receivedPayload.text, '');
+    assert.equal(receivedAttachment.mimetype, 'application/pdf');
+    assert.equal(receivedAttachment.fileName, 'job-advertisement.pdf');
+    assert.deepEqual(receivedAttachment.buffer, pdfBuffer);
+});
+
+test('forwards an image attachment together with its caption', async () => {
+    let receivedPayload;
+    let receivedAttachment;
+
+    const imageBuffer = Buffer.from('test-image-content');
+
+    const result = await handleWhatsAppMessage(
+        makeMessage({
+            key: {
+                id: 'wamid.test-image-001',
+                remoteJid: '255712345678@s.whatsapp.net',
+                fromMe: false,
+            },
+            message: {
+                imageMessage: {
+                    mimetype: 'image/jpeg',
+                    caption: 'Here is the job advertisement.',
+                },
+            },
+        }),
+        { info() {}, warn() {}, error() {} },
+        async (payload, attachment) => {
+            receivedPayload = payload;
+            receivedAttachment = attachment;
+            return { duplicate: false };
+        },
+        async () => null,
+        async () => makeMediaStream(imageBuffer),
+    );
+
+    assert.equal(result.ignored, false);
+    assert.equal(
+        receivedPayload.text,
+        'Here is the job advertisement.',
+    );
+    assert.equal(receivedAttachment.mimetype, 'image/jpeg');
+    assert.deepEqual(receivedAttachment.buffer, imageBuffer);
+});
+
+test('ignores unsupported attachment types', async () => {
+    const result = await handleWhatsAppMessage(
+        makeMessage({
+            key: {
+                id: 'wamid.test-unsupported-001',
+                remoteJid: '255712345678@s.whatsapp.net',
+                fromMe: false,
+            },
+            message: {
+                documentMessage: {
+                    mimetype: 'application/zip',
+                    fileName: 'job-advertisement.zip',
+                },
+            },
+        }),
+        { info() {}, warn() {}, error() {} },
+        async () => assert.fail('Unsupported media must not be forwarded'),
+        async () => null,
+        async () => assert.fail('Unsupported media must not be downloaded'),
+    );
+
+    assert.deepEqual(result, {
+        ignored: true,
+        reason: 'unsupported-attachment-type',
+    });
+});
+
+test('rejects an attachment exceeding the 10 MB limit', async () => {
+    const oversizedBuffer = Buffer.alloc(10 * 1024 * 1024 + 1);
+
+    const result = await handleWhatsAppMessage(
+        makeMessage({
+            key: {
+                id: 'wamid.test-oversized-001',
+                remoteJid: '255712345678@s.whatsapp.net',
+                fromMe: false,
+            },
+            message: {
+                documentMessage: {
+                    mimetype: 'application/pdf',
+                    fileName: 'large-job-advertisement.pdf',
+                },
+            },
+        }),
+        { info() {}, warn() {}, error() {} },
+        async () => assert.fail('Oversized media must not be forwarded'),
+        async () => null,
+        async () => makeMediaStream(oversizedBuffer),
+    );
+
+    assert.deepEqual(result, {
+        ignored: true,
+        reason: 'attachment-too-large',
+    });
+});

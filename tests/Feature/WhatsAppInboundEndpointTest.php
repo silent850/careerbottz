@@ -4,6 +4,7 @@ namespace Tests\Feature;
 use App\Models\Message;
 use App\Models\WebhookEvent;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class WhatsAppInboundEndpointTest extends TestCase
@@ -13,6 +14,8 @@ class WhatsAppInboundEndpointTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        Queue::fake();
 
         config([
             'services.whatsapp_gateway.secret' => 'test-gateway-secret',
