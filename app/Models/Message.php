@@ -18,6 +18,10 @@ class Message extends Model
         'status',
         'received_at',
         'processed_at',
+        'attachment_path',
+        'attachment_mime_type',
+        'attachment_original_name',
+        'attachment_size',
     ];
 
     protected function casts(): array

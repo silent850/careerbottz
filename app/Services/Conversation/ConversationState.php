@@ -8,6 +8,7 @@ enum ConversationState: string
     case LANGUAGE_SELECTION = 'language_selection';
     case CV_SELECTION = 'cv_selection';
     case CV_NAMING = 'cv_naming';
+    case CV_PURPOSE = 'cv_purpose';
     case PERSONAL_DETAILS = 'personal_details';
     case EDUCATION = 'education';
     case EXPERIENCE = 'experience';

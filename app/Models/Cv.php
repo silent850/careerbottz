@@ -20,12 +20,14 @@ class Cv extends Model
         'status',
         'template',
         'professional_summary',
+        'job_context',
     ];
 
     protected function casts(): array
     {
         return [
             'status' => CvStatus::class,
+            'job_context' => 'array',
         ];
     }
 
@@ -33,55 +35,6 @@ class Cv extends Model
     {
         return $this->belongsTo(User::class);
     }
-
-    /**
- * Validate a professional summary.
- */
-public function validateProfessionalSummary(
-    ?string $summary
-): ?string {
-    $validated = Validator::make(
-        ['professional_summary' => $summary],
-        [
-            'professional_summary' => ['nullable', 'string'],
-        ]
-    )->validate();
-
-    return $validated['professional_summary'];
-}
-
-/**
- * Save or update the professional summary for an owned draft CV.
- */
-public function saveProfessionalSummary(
-    User $user,
-    Cv $cv,
-    ?string $summary
-): Cv {
-    $validatedSummary = $this->validateProfessionalSummary($summary);
-
-    return DB::transaction(function () use (
-        $user,
-        $cv,
-        $validatedSummary
-    ): Cv {
-        $lockedCv = $user->cvs()
-            ->whereKey($cv->getKey())
-            ->lockForUpdate()
-            ->firstOrFail();
-
-        if ($lockedCv->status !== CvStatus::DRAFT) {
-            throw new InvalidArgumentException(
-                'Only draft CVs can be updated.'
-            );
-        }
-
-        $lockedCv->professional_summary = $validatedSummary;
-        $lockedCv->save();
-
-        return $lockedCv;
-    }, 3);
-}
 
     public function personalDetails(): HasOne
     {

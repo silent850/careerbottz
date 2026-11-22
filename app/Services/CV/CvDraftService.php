@@ -5,14 +5,10 @@ namespace App\Services\CV;
 use App\Enums\CvStatus;
 use App\Models\Conversation;
 use App\Models\Cv;
-use App\Models\CvCertification;
 use App\Models\CvEducation;
-use App\Models\CvExperience;
-use App\Models\CvLanguage;
 use App\Models\CvPersonalDetail;
-use App\Models\CvProject;
 use App\Models\CvReference;
-use App\Models\CvSkill;
+use App\Models\CvSection;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -82,79 +78,84 @@ class CvDraftService
             );
         }
 
-        $sections = [
-            'experiences' => [
-                'relationship' => 'experiences',
-                'model' => CvExperience::class,
-            ],
-            'skills' => [
-                'relationship' => 'skills',
-                'model' => CvSkill::class,
-            ],
-            'projects' => [
-                'relationship' => 'projects',
-                'model' => CvProject::class,
-            ],
-            'certifications' => [
-                'relationship' => 'certifications',
-                'model' => CvCertification::class,
-            ],
-            'languages' => [
-                'relationship' => 'languages',
-                'model' => CvLanguage::class,
-            ],
-            'references' => [
-                'relationship' => 'references',
-                'model' => CvReference::class,
-            ],
-        ];
-
-        if (! isset($sections[$section])) {
-            throw new InvalidArgumentException(
-                'Unsupported CV section.'
+        // Working experience persistence is handled by CvSectionService.
+        if ($section === 'experiences') {
+            return $this->sectionService->saveExperience(
+                $user,
+                $cv,
+                $data,
+                $recordId
             );
         }
 
-        return DB::transaction(function () use (
+        // Skill persistence is handled by CvSectionService.
+        if ($section === 'skills') {
+            return $this->sectionService->saveSkill(
+                $user,
+                $cv,
+                $data,
+                $recordId
+            );
+        }
+
+        // Project persistence is handled by CvSectionService.
+        if ($section === 'projects') {
+            return $this->sectionService->saveProject(
+                $user,
+                $cv,
+                $data,
+                $recordId
+            );
+        }
+
+        // Certification persistence is handled by CvSectionService.
+        if ($section === 'certifications') {
+            return $this->sectionService->saveCertification(
+                $user,
+                $cv,
+                $data,
+                $recordId
+            );
+        }
+
+        // Language persistence is handled by CvSectionService.
+        if ($section === 'languages') {
+            return $this->sectionService->saveLanguage(
+                $user,
+                $cv,
+                $data,
+                $recordId
+            );
+        }
+
+        // Reference persistence is handled by CvSectionService.
+        if ($section === 'references') {
+            return $this->sectionService->saveReference(
+                $user,
+                $cv,
+                $data,
+                $recordId
+            );
+        }
+
+        throw new InvalidArgumentException(
+            'Unsupported CV section.'
+        );
+    }
+
+    /**
+     * Save or update one optional section of a draft CV.
+     */
+    public function saveOptionalSection(
+        User $user,
+        Cv $cv,
+        array $data
+    ): CvSection {
+        return $this->sectionService->saveOptionalSection(
             $user,
             $cv,
-            $section,
-            $data,
-            $recordId,
-            $sections
-        ): Model {
-            $lockedCv = $this->lockDraft($user, $cv);
-
-            $modelClass = $sections[$section]['model'];
-            $relationship = $sections[$section]['relationship'];
-
-            $attributes = $this->prepareAttributes(
-                new $modelClass(),
-                $data
-            );
-
-            $attributes = $this->sectionService->validateRecord(
-                $section,
-                $attributes,
-                $recordId === null
-            );
-
-            $relation = $lockedCv->{$relationship}();
-
-            if ($recordId !== null) {
-                $record = $relation
-                    ->whereKey($recordId)
-                    ->lockForUpdate()
-                    ->firstOrFail();
-
-                $record->fill($attributes);
-                $record->save();
-
-                return $record;
-            }
-
-            return $relation->create($attributes);
-        }, 3);
+            $data
+        );
     }
 
     /**

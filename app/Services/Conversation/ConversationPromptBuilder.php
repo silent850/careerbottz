@@ -33,6 +33,10 @@ final class ConversationPromptBuilder
                 ? 'Tafadhali weka jina la CV yako.'
                 : 'Please enter a name for your CV.',
 
+            ConversationState::CV_PURPOSE => $kiswahili
+                ? 'Ungependa kuunda CV ya jumla au CV inayolenga nafasi maalumu ya kazi? Jibu "general" kwa CV ya jumla au "targeted" kwa CV inayolenga kazi maalumu.'
+                : 'Would you like to create a general CV or a job-targeted CV? Reply "general" for a general CV or "targeted" for a CV tailored to a specific job advertisement.',
+
             ConversationState::PERSONAL_DETAILS => $kiswahili
                 ? 'Tafadhali shiriki taarifa zako za msingi kwa ajili ya CV yako.'
                 : 'Please share your basic personal details for your CV.',

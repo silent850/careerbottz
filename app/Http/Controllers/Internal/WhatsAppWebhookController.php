@@ -17,7 +17,8 @@ class WhatsAppWebhookController extends Controller
     ): JsonResponse {
         try {
             $result = $inboundMessageService->receive(
-                $request->all()
+                $request->input(),
+                $request->file('attachment'),
             );
         } catch (ValidationException $exception) {
             return response()->json([

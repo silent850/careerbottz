@@ -5,8 +5,15 @@ namespace App\Services\CV;
 use App\Enums\CvStatus;
 use App\Models\Cv;
 use App\Models\CvEducation;
+use App\Models\CvExperience;
+use App\Models\CvSkill;
+use App\Models\CvProject;
 use App\Models\CvPersonalDetail;
+use App\Models\CvCertification;
+use App\Models\CvLanguage;
 use App\Models\User;
+use App\Models\CvReference;
+use App\Models\CvSection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
@@ -311,9 +318,559 @@ class CvSectionService
     }
 
     /**
+     * Save a new working experience record or update an existing record
+     * belonging to the specified user's draft CV.
+     *
+     * A null record ID creates a new record.
+     * A supplied record ID updates only that CV's record.
+     */
+    public function saveExperience(
+        User $user,
+        Cv $cv,
+        array $data,
+        ?int $recordId = null
+    ): CvExperience {
+        $allowedFields = array_diff(
+            (new CvExperience())->getFillable(),
+            ['cv_id']
+        );
+
+        $unknownFields = array_diff(
+            array_keys($data),
+            $allowedFields
+        );
+
+        if ($unknownFields !== []) {
+            throw new InvalidArgumentException(
+                'Unsupported experience fields: ' .
+                implode(', ', $unknownFields)
+            );
+        }
+
+        if ($data === []) {
+            throw new InvalidArgumentException(
+                'At least one experience field must be provided.'
+            );
+        }
+
+        return DB::transaction(function () use (
+            $user,
+            $cv,
+            $data,
+            $recordId
+        ): CvExperience {
+            $lockedCv = $user->cvs()
+                ->whereKey($cv->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if ($lockedCv->status !== CvStatus::DRAFT) {
+                throw new InvalidArgumentException(
+                    'Only draft CVs can be updated.'
+                );
+            }
+
+            $validatedData = $this->validateRecord(
+                'experiences',
+                $data,
+                $recordId === null
+            );
+
+            $relation = $lockedCv->experiences();
+
+            if ($recordId !== null) {
+                $experience = $relation
+                    ->whereKey($recordId)
+                    ->lockForUpdate()
+                    ->firstOrFail();
+
+                $experience->fill($validatedData);
+                $experience->save();
+
+                return $experience;
+            }
+
+            return $relation->create($validatedData);
+        }, 3);
+    }
+
+    /**
      * Required fields are enforced when creating a record.
      * On updates, they are required only when supplied.
      */
+
+    /**
+ * Save a skill belonging to the specified user's draft CV.
+ *
+ * A null record ID creates a new skill record.
+ * A supplied record ID updates only that CV's skill.
+ */
+public function saveSkill(
+    User $user,
+    Cv $cv,
+    array $data,
+    ?int $recordId = null
+): CvSkill {
+    $allowedFields = array_diff(
+        (new CvSkill())->getFillable(),
+        ['cv_id']
+    );
+
+    $unknownFields = array_diff(
+        array_keys($data),
+        $allowedFields
+    );
+
+    if ($unknownFields !== []) {
+        throw new InvalidArgumentException(
+            'Unsupported skill fields: ' .
+            implode(', ', $unknownFields)
+        );
+    }
+
+    if ($data === []) {
+        throw new InvalidArgumentException(
+            'At least one skill field must be provided.'
+        );
+    }
+
+    return DB::transaction(function () use (
+        $user,
+        $cv,
+        $data,
+        $recordId
+    ): CvSkill {
+        $lockedCv = $user->cvs()
+            ->whereKey($cv->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($lockedCv->status !== CvStatus::DRAFT) {
+            throw new InvalidArgumentException(
+                'Only draft CVs can be updated.'
+            );
+        }
+
+        $validatedData = $this->validateRecord(
+            'skills',
+            $data,
+            $recordId === null
+        );
+
+        $relation = $lockedCv->skills();
+
+        if ($recordId !== null) {
+            $skill = $relation
+                ->whereKey($recordId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $skill->fill($validatedData);
+            $skill->save();
+
+            return $skill;
+        }
+
+        return $relation->create($validatedData);
+    }, 3);
+}
+    /**
+ * Save a new project record or update an existing project
+ * belonging to the specified user's draft CV.
+ *
+ * A null record ID creates a new project record.
+ * A supplied record ID updates only that CV's project.
+ */
+public function saveProject(
+    User $user,
+    Cv $cv,
+    array $data,
+    ?int $recordId = null
+): CvProject {
+    $allowedFields = array_diff(
+        (new CvProject())->getFillable(),
+        ['cv_id']
+    );
+
+    $unknownFields = array_diff(
+        array_keys($data),
+        $allowedFields
+    );
+
+    if ($unknownFields !== []) {
+        throw new InvalidArgumentException(
+            'Unsupported project fields: ' .
+            implode(', ', $unknownFields)
+        );
+    }
+
+    if ($data === []) {
+        throw new InvalidArgumentException(
+            'At least one project field must be provided.'
+        );
+    }
+
+    return DB::transaction(function () use (
+        $user,
+        $cv,
+        $data,
+        $recordId
+    ): CvProject {
+        $lockedCv = $user->cvs()
+            ->whereKey($cv->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($lockedCv->status !== CvStatus::DRAFT) {
+            throw new InvalidArgumentException(
+                'Only draft CVs can be updated.'
+            );
+        }
+
+        $validatedData = $this->validateRecord(
+            'projects',
+            $data,
+            $recordId === null
+        );
+
+        $relation = $lockedCv->projects();
+
+        if ($recordId !== null) {
+            $project = $relation
+                ->whereKey($recordId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $project->fill($validatedData);
+            $project->save();
+
+            return $project;
+        }
+
+        return $relation->create($validatedData);
+    }, 3);
+}
+/**
+ * Save a new certification record or update an existing certification
+ * belonging to the specified user's draft CV.
+ *
+ * A null record ID creates a new certification record.
+ * A supplied record ID updates only that CV's certification.
+ */
+public function saveCertification(
+    User $user,
+    Cv $cv,
+    array $data,
+    ?int $recordId = null
+): CvCertification {
+    $allowedFields = array_diff(
+        (new CvCertification())->getFillable(),
+        ['cv_id']
+    );
+
+    $unknownFields = array_diff(
+        array_keys($data),
+        $allowedFields
+    );
+
+    if ($unknownFields !== []) {
+        throw new InvalidArgumentException(
+            'Unsupported certification fields: ' .
+            implode(', ', $unknownFields)
+        );
+    }
+
+    if ($data === []) {
+        throw new InvalidArgumentException(
+            'At least one certification field must be provided.'
+        );
+    }
+
+    return DB::transaction(function () use (
+        $user,
+        $cv,
+        $data,
+        $recordId
+    ): CvCertification {
+        $lockedCv = $user->cvs()
+            ->whereKey($cv->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($lockedCv->status !== CvStatus::DRAFT) {
+            throw new InvalidArgumentException(
+                'Only draft CVs can be updated.'
+            );
+        }
+
+        $validatedData = $this->validateRecord(
+            'certifications',
+            $data,
+            $recordId === null
+        );
+
+        $relation = $lockedCv->certifications();
+
+        if ($recordId !== null) {
+            $certification = $relation
+                ->whereKey($recordId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $certification->fill($validatedData);
+            $certification->save();
+
+            return $certification;
+        }
+
+        return $relation->create($validatedData);
+    }, 3);
+}
+/**
+ * Save a new language record or update an existing language
+ * belonging to the specified user's draft CV.
+ *
+ * A null record ID creates a new language record.
+ * A supplied record ID updates only that CV's language.
+ */
+public function saveLanguage(
+    User $user,
+    Cv $cv,
+    array $data,
+    ?int $recordId = null
+): CvLanguage {
+    $allowedFields = array_diff(
+        (new CvLanguage())->getFillable(),
+        ['cv_id']
+    );
+
+    $unknownFields = array_diff(
+        array_keys($data),
+        $allowedFields
+    );
+
+    if ($unknownFields !== []) {
+        throw new InvalidArgumentException(
+            'Unsupported language fields: ' .
+            implode(', ', $unknownFields)
+        );
+    }
+
+    if ($data === []) {
+        throw new InvalidArgumentException(
+            'At least one language field must be provided.'
+        );
+    }
+
+    return DB::transaction(function () use (
+        $user,
+        $cv,
+        $data,
+        $recordId
+    ): CvLanguage {
+        $lockedCv = $user->cvs()
+            ->whereKey($cv->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($lockedCv->status !== CvStatus::DRAFT) {
+            throw new InvalidArgumentException(
+                'Only draft CVs can be updated.'
+            );
+        }
+
+        $validatedData = $this->validateRecord(
+            'languages',
+            $data,
+            $recordId === null
+        );
+
+        $relation = $lockedCv->languages();
+
+        if ($recordId !== null) {
+            $language = $relation
+                ->whereKey($recordId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $language->fill($validatedData);
+            $language->save();
+
+            return $language;
+        }
+
+        return $relation->create($validatedData);
+    }, 3);
+}
+
+/**
+ * Save a new reference or update an existing reference
+ * belonging to the specified user's draft CV.
+ *
+ * A null record ID creates a new reference.
+ * A supplied record ID updates only that CV's reference.
+ */
+public function saveReference(
+    User $user,
+    Cv $cv,
+    array $data,
+    ?int $recordId = null
+): CvReference {
+    $allowedFields = array_diff(
+        (new CvReference())->getFillable(),
+        ['cv_id']
+    );
+
+    $unknownFields = array_diff(
+        array_keys($data),
+        $allowedFields
+    );
+
+    if ($unknownFields !== []) {
+        throw new InvalidArgumentException(
+            'Unsupported reference fields: ' .
+            implode(', ', $unknownFields)
+        );
+    }
+
+    if ($data === []) {
+        throw new InvalidArgumentException(
+            'At least one reference field must be provided.'
+        );
+    }
+
+    return DB::transaction(function () use (
+        $user,
+        $cv,
+        $data,
+        $recordId
+    ): CvReference {
+        $lockedCv = $user->cvs()
+            ->whereKey($cv->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($lockedCv->status !== CvStatus::DRAFT) {
+            throw new InvalidArgumentException(
+                'Only draft CVs can be updated.'
+            );
+        }
+
+        $validatedData = $this->validateRecord(
+            'references',
+            $data,
+            $recordId === null
+        );
+
+        $relation = $lockedCv->references();
+
+        if ($recordId !== null) {
+            $reference = $relation
+                ->whereKey($recordId)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $reference->fill($validatedData);
+            $reference->save();
+
+            return $reference;
+        }
+
+        return $relation->create($validatedData);
+    }, 3);
+}
+
+/**
+ * Save or update one optional section belonging to the
+ * specified user's draft CV.
+ *
+ * The section key identifies the section within this CV.
+ * Updating an existing section changes only that section.
+ */
+public function saveOptionalSection(
+    User $user,
+    Cv $cv,
+    array $data
+): CvSection {
+    $allowedFields = array_diff(
+        (new CvSection())->getFillable(),
+        ['cv_id']
+    );
+
+    $unknownFields = array_diff(
+        array_keys($data),
+        $allowedFields
+    );
+
+    if ($unknownFields !== []) {
+        throw new InvalidArgumentException(
+            'Unsupported optional section fields: ' .
+            implode(', ', $unknownFields)
+        );
+    }
+
+    if (
+        ! array_key_exists('section_key', $data) ||
+        ! is_string($data['section_key']) ||
+        trim($data['section_key']) === ''
+    ) {
+        throw new InvalidArgumentException(
+            'A section key must be provided.'
+        );
+    }
+
+    return DB::transaction(function () use (
+        $user,
+        $cv,
+        $data
+    ): CvSection {
+        $lockedCv = $user->cvs()
+            ->whereKey($cv->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        if ($lockedCv->status !== CvStatus::DRAFT) {
+            throw new InvalidArgumentException(
+                'Only draft CVs can be updated.'
+            );
+        }
+
+        $relation = $lockedCv->sections();
+
+        $existingSection = $relation
+            ->where('section_key', $data['section_key'])
+            ->lockForUpdate()
+            ->first();
+
+        $isNewSection = $existingSection === null;
+
+        $rules = [
+            'section_key' => ['required', 'string', 'max:100'],
+            'section_title' => $isNewSection
+                ? ['required', 'string', 'max:255']
+                : ['sometimes', 'required', 'string', 'max:255'],
+            'content' => $isNewSection
+                ? ['required', 'array']
+                : ['sometimes', 'required', 'array'],
+            'sort_order' => ['sometimes', 'integer', 'min:0'],
+            'is_visible' => ['sometimes', 'boolean'],
+        ];
+
+        $validatedData = Validator::make(
+            $data,
+            $rules
+        )->validate();
+
+        if ($existingSection !== null) {
+            $existingSection->fill($validatedData);
+            $existingSection->save();
+
+            return $existingSection;
+        }
+
+        return $relation->create($validatedData);
+    }, 3);
+}
     private function requiredString(
         int $maxLength,
         bool $isNewRecord

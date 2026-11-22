@@ -15,6 +15,7 @@ class Conversation extends Model
         'previous_state',
         'status',
         'active_cv_id',
+        'pending_cv_type',
     ];
 
     protected function casts(): array

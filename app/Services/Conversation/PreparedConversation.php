@@ -18,5 +18,7 @@ final readonly class PreparedConversation
         public ?string $previousState = null,
         public bool $updatePreviousState = false,
         public ?string $conversationStatus = null,
+        public ?string $pendingCvType = null,
+        public bool $updatePendingCvType = false,
     ) {}
 }

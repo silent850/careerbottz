@@ -1,4 +1,3 @@
-
 import { timingSafeEqual } from 'node:crypto';
 import { rename } from 'node:fs/promises';
 import Fastify from 'fastify';
@@ -6,6 +5,7 @@ import pino from 'pino';
 import makeWASocket, {
     DisconnectReason,
     useMultiFileAuthState,
+    downloadMediaMessage,
 } from '@whiskeysockets/baileys';
 import qrcode from 'qrcode-terminal';
 
@@ -336,6 +336,16 @@ async function startWhatsApp() {
 
                         return await mappingStore.getPNForLID(lid);
                     },
+                    async (incomingMessage) => downloadMediaMessage(
+                        incomingMessage,
+                        'stream',
+                        {},
+                        {
+                            reuploadRequest: (mediaMessage) =>
+                                currentSocket.updateMediaMessage(mediaMessage),
+                            logger: app.log,
+                        },
+                    ),
                 );
 
                 app.log.info(
